@@ -8,7 +8,8 @@
 ### 新增
 
 - 完善项目文档：新增 `docs/`（架构、开发、发布、上游同步、故障排查）、`CONTRIBUTING.md`、`CHANGELOG.md`；
-- 重写 `README.md`：完善方案第一期（已实现）/第二期（规划中）的功能说明与验收标准。
+- 重写 `README.md`：完善方案第一期（已实现）/第二期（规划中）的功能说明与验收标准；
+- **GitHub Actions 自动发布**：新增 `release.yml`（tag/手动触发），自动构建 macOS（arm64+x64 DMG）、Windows（NSIS）、Linux（AppImage）并发布 GitHub Release，含更新元数据与可选签名/公证；`fetch-node.mjs` 支持 `--platforms` 并按平台选择 Node 运行时；`electron-builder` 增加 `publish` 元数据与确定性 `artifactName`。
 
 ## [0.1.0] - 2026-08-14
 

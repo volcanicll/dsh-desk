@@ -1,0 +1,196 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+      draft:
+        description: 'Create as draft (review before publishing)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify tag ↔ package.json version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Check tag matches package.json version
+        if: github.event_name == 'push'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}"
+            exit 1
+          fi
+          echo "OK: ${GITHUB_REF_NAME} ↔ ${PKG_VERSION}"
+
+  build-mac:
+    name: Build macOS (arm64 + x64 DMG)
+    needs: verify
+    runs-on: macos-latest
+    env:
+      # Signing/notarization is optional: with secrets set the build is signed
+      # and notarized; without them an unsigned build is produced and warned.
+      CSC_LINK: ${{ secrets.MAC_CERT_BASE64 }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_BASE64 != '' && 'true' || 'false' }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Bundle Node runtimes for both macOS arches (runner arch may differ).
+      - name: Fetch Node runtimes (darwin)
+        run: node scripts/fetch-node.mjs --platforms darwin-arm64,darwin-x64
+      - name: Bundle dsh + smoke gate
+        run: node scripts/bundle-dsh.mjs
+      - name: Build DMGs
+        run: npx electron-builder --mac --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-mac
+          path: |
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/latest-mac.yml
+          if-no-files-found: error
+
+  build-win:
+    name: Build Windows (x64 NSIS)
+    needs: verify
+    runs-on: windows-latest
+    env:
+      CSC_LINK: ${{ secrets.WIN_CERT_BASE64 }}
+      CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.WIN_CERT_BASE64 != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Node runtime (win32-x64)
+        run: node scripts/fetch-node.mjs --platforms win32-x64
+      - name: Bundle dsh + smoke gate
+        run: node scripts/bundle-dsh.mjs
+      - name: Build NSIS installer
+        run: npx electron-builder --win --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-win
+          path: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux (x64 + arm64 AppImage)
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Node runtimes (linux)
+        run: node scripts/fetch-node.mjs --platforms linux-x64,linux-arm64
+      - name: Bundle dsh + smoke gate
+        run: node scripts/bundle-dsh.mjs
+      - name: Build AppImages
+        run: npx electron-builder --linux --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-linux
+          path: |
+            release/*.AppImage
+            release/latest-linux.yml
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-mac, build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compute release metadata
+        id: meta
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          DSH_VERSION="$(node -p "require('./package.json').dsh.version")"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="v${VERSION}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "dshVersion=${DSH_VERSION}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.inputs.prerelease }}" = "true" ] || [[ "$TAG" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "draft=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.inputs.draft }}" = "true" ]; then
+            echo "draft=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "draft=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: List artifacts
+        run: ls -lhR release
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: DSH Desk ${{ steps.meta.outputs.tag }}
+          body: |
+            ## DSH Desk ${{ steps.meta.outputs.tag }}
+
+            桌面端封装 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`），不改动任何前端代码，原版 Web UI 与交互 100% 保留。
+
+            - 内置 dsh：`${{ steps.meta.outputs.dshVersion }}`（npm 发布版）
+            - 自包含：内置 Node 运行时与 dsh 依赖树，无需安装 Node
+
+            ### 下载
+
+            - **macOS**：`DSH Desk-${{ steps.meta.outputs.version }}-arm64.dmg`（Apple Silicon）/ `DSH Desk-${{ steps.meta.outputs.version }}-x64.dmg`（Intel）
+            - **Windows**：`DSH Desk-${{ steps.meta.outputs.version }}-setup.exe`（NSIS 安装包，可自选目录）
+            - **Linux**：AppImage（x64 / arm64）
+
+            > 未签名构建在 macOS 首次打开需右键 → 打开（Gatekeeper）。配置签名密钥后自动签名/公证。
+          files: release/**
+          draft: ${{ steps.meta.outputs.draft }}
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          generate_release_notes: true

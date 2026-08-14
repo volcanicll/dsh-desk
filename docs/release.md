@@ -58,9 +58,47 @@ npm run dist              # 当前平台
 
 ## 4. CI
 
-`.github/workflows/smoke.yml`：push/PR 时在 ubuntu-latest 上跑 `npm ci`（`ELECTRON_SKIP_BINARY_DOWNLOAD=1`，不下载 Electron 二进制，因为 smoke 不启动 GUI）→ `npm run smoke`。
+| 工作流 | 触发 | 作用 |
+|---|---|---|
+| `.github/workflows/smoke.yml` | push/PR | ubuntu-latest 上 `npm ci`（`ELECTRON_SKIP_BINARY_DOWNLOAD=1`，smoke 不启动 GUI）→ `npm run smoke` |
+| `.github/workflows/release.yml` | tag `v*` push / 手动触发 | 构建 mac/win/linux 安装包并自动发布 GitHub Release（见 §6） |
 
-## 5. 常见发布问题
+## 6. 自动发布（GitHub Actions Release）
+
+`.github/workflows/release.yml` 在以下时机自动构建并发布：
+
+- **tag push**：推送 `v*.*.*` 标签（如 `v0.1.0`）→ 校验标签与 `package.json → version` 一致后构建，直接发布 Release（非 draft）；
+- **手动触发**：Actions → Release → Run workflow，可指定 draft / prerelease；tag 由 `package.json → version` 自动推导（`v<version>`，不存在则自动创建）。
+
+### 6.1 构建矩阵
+
+| Job | Runner | 产物 |
+|---|---|---|
+| `build-mac` | macos-latest | `DSH Desk-<ver>-arm64.dmg`、`DSH Desk-<ver>-x64.dmg` + blockmap + `latest-mac.yml` |
+| `build-win` | windows-latest | `DSH Desk-<ver>-setup.exe` + blockmap + `latest.yml` |
+| `build-linux` | ubuntu-latest | AppImage（x64/arm64）+ `latest-linux.yml` |
+
+每个构建 Job 先 `npm ci` → `fetch-node`（按目标平台/架构捆绑 Node 运行时）→ `bundle-dsh`（捆绑 npm 发布版 dsh + 自动跑 packaged 冒烟门禁）→ `electron-builder --publish never` → 上传 artifacts；`release` Job 汇总后经 `softprops/action-gh-release` 发布。
+
+### 6.2 签名与公证（可选，通过 Secrets 配置）
+
+| Secret | 用途 |
+|---|---|
+| `MAC_CERT_BASE64` / `MAC_CERT_PASSWORD` | macOS 证书（base64 编码的 .p12/.pfx）与密码 |
+| `APPLE_ID` / `APPLE_APP_SPECIFIC_PASSWORD` / `APPLE_TEAM_ID` | macOS 公证（notarization） |
+| `WIN_CERT_BASE64` / `WIN_CERT_PASSWORD` | Windows 代码签名证书与密码 |
+
+未配置时构建**不签名**照常发布，Release 说明会提示 macOS 首次打开需右键 → 打开（Gatekeeper）。
+
+### 6.3 发布流程（发版清单）
+
+1. 更新 `package.json → version`（并确认 `dsh.version` 为期望的 dsh 版本）；
+2. 更新 `CHANGELOG.md`；
+3. 提交并推送（`npm run smoke` 先通过）；
+4. 打标签并推送：`git tag v0.1.0 && git push origin v0.1.0`；
+5. Actions 自动构建三平台并发布 Release（含 `latest*.yml`，可直接支持后续自动更新接入）。
+
+## 7. 常见发布问题
 
 | 问题 | 处理 |
 |---|---|
