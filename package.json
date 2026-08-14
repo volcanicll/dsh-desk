@@ -1,0 +1,29 @@
+{
+  "name": "deepseek-desktop",
+  "productName": "DeepSeek Desktop",
+  "version": "0.1.0",
+  "description": "Desktop wrapper for DeepSeek Harness (dsh). Preserves the original web UI and interactions while adding native desktop behavior.",
+  "type": "module",
+  "main": "src/main/index.js",
+  "author": "DeepSeek Desktop contributors",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "fetch:node": "node scripts/fetch-node.mjs",
+    "bundle:dsh": "node scripts/bundle-dsh.mjs",
+    "prepare:runtime": "npm run fetch:node && npm run bundle:dsh",
+    "pack": "npm run prepare:runtime && electron-builder --dir",
+    "dist": "npm run prepare:runtime && electron-builder",
+    "dist:mac": "npm run prepare:runtime && electron-builder --mac",
+    "dist:win": "npm run prepare:runtime && electron-builder --win",
+    "dist:linux": "npm run prepare:runtime && electron-builder --linux",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh": "latest"
+  }
+}

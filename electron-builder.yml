@@ -1,0 +1,42 @@
+appId: ai.deepseek.desktop
+productName: DeepSeek Desktop
+copyright: Copyright © 2026 DeepSeek Desktop contributors
+directories:
+  output: release
+  buildResources: build
+files:
+  - src/**/*
+  - package.json
+  - "!resources/**"
+  - "!node_modules/**/*"
+extraResources:
+  - from: resources/node
+    to: node
+    filter: ["**/*"]
+  # Point at node_modules (not resources/dsh) so electron-builder does not
+  # treat the npm --prefix install as an app project and prune its deps.
+  - from: resources/dsh/node_modules
+    to: dsh/node_modules
+    filter: ["**/*"]
+npmRebuild: false
+mac:
+  category: public.app-category.developer-tools
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Development
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
