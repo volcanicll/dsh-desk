@@ -17,7 +17,9 @@
     "dist:mac": "npm run prepare:runtime && electron-builder --mac",
     "dist:win": "npm run prepare:runtime && electron-builder --win",
     "dist:linux": "npm run prepare:runtime && electron-builder --linux",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "check:update": "node scripts/check-dsh-update.mjs",
+    "update:dsh": "node scripts/check-dsh-update.mjs --apply"
   },
   "devDependencies": {
     "electron": "^37.2.0",
@@ -45,5 +47,8 @@
   ],
   "engines": {
     "node": ">=22.19.0"
+  },
+  "dsh": {
+    "version": "0.1.0-rc.6"
   }
 }

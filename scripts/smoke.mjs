@@ -1,14 +1,19 @@
 /**
  * smoke.mjs — GUI-free verification of the full dsh runtime pipeline:
- * resolve runtime → spawn `dsh web --port 0` → parse readiness URL →
+ * resolve runtime → pick free port → spawn `dsh web --port <port>` →
+ * robust readiness (official line / any loopback literal / HTTP poll) →
  * HTTP GET returns the original web UI → graceful shutdown.
  *
- * Usage: node scripts/smoke.mjs
+ * Usage:
+ *   node scripts/smoke.mjs                      # dev layout (system node + local dsh)
+ *   node scripts/smoke.mjs --packaged <root>    # packaged layout (bundled node + dsh)
  */
 import { spawn } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { resolveRuntimePaths } from '../src/main/dsh-resolve.js'
+import { pickFreePort, urlFromStdout, waitForHttpReady } from '../src/main/dsh-common.js'
 
-const URL_LINE = /dsh web:\s+(https?:\/\/[^\s]+)/
 const READY_TIMEOUT_MS = 60_000
 
 async function main() {
@@ -16,9 +21,18 @@ async function main() {
   const packaged = packagedIdx !== -1
   const resourcesPath = packaged ? process.argv[packagedIdx + 1] : undefined
   const { nodeBin, dshBin } = resolveRuntimePaths({ packaged, resourcesPath })
+  const port = await pickFreePort()
   console.log(`[smoke] node=${nodeBin}`)
   console.log(`[smoke] dsh=${dshBin}`)
-  const child = spawn(nodeBin, [dshBin, 'web', '--port', '0'], {
+  if (packaged) {
+    const vFile = join(resourcesPath, 'dsh', 'version.json')
+    if (existsSync(vFile)) {
+      const v = JSON.parse(readFileSync(vFile, 'utf8'))
+      console.log(`[smoke] dsh bundle version: ${v.installed ?? 'unknown'} (requested ${v.requested ?? 'n/a'})`)
+    }
+  }
+
+  const child = spawn(nodeBin, [dshBin, 'web', '--port', String(port)], {
     env: { ...process.env, DSH_TELEMETRY_DISABLED: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
@@ -31,10 +45,10 @@ async function main() {
   child.stderr.on('data', (c) => { stderr += c })
 
   const ready = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`timeout waiting for readiness\nstderr:\n${stderr.slice(-2000)}`)), READY_TIMEOUT_MS)
+    const timer = setTimeout(() => reject(new Error(`timeout waiting for readiness\nstderr:\n${stderr.slice(-2000)}`)), READY_TIMEOUT_MS + 2_000)
     child.stdout.on('data', () => {
-      const m = stdout.match(URL_LINE)
-      if (m) { clearTimeout(timer); resolve(m[1]) }
+      const u = urlFromStdout(stdout, port)
+      if (u) { clearTimeout(timer); resolve(u) }
     })
     child.on('error', (err) => { clearTimeout(timer); reject(err) })
     child.on('exit', (code) => {
@@ -43,7 +57,12 @@ async function main() {
   })
 
   try {
-    url = await ready
+    // URL line (or stdout fallback) wins; HTTP poll is the last resort.
+    const fromStdout = await Promise.race([
+      ready,
+      waitForHttpReady({ port, timeoutMs: READY_TIMEOUT_MS }).then((u) => u).catch(() => null),
+    ])
+    url = fromStdout ?? (await waitForHttpReady({ port, timeoutMs: 5_000 }))
     console.log(`[smoke] ready: ${url}`)
 
     const res = await fetch(url)

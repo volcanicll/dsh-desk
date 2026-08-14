@@ -18,6 +18,8 @@ extraResources:
   - from: resources/dsh/node_modules
     to: dsh/node_modules
     filter: ["**/*"]
+  - from: resources/dsh/version.json
+    to: dsh/version.json
 npmRebuild: false
 mac:
   category: public.app-category.developer-tools
