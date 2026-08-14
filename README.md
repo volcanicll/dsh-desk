@@ -1,8 +1,24 @@
 # DSH Desk
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/volcanicll/dsh-desk)](https://github.com/volcanicll/dsh-desk)
+[![Node](https://img.shields.io/badge/node-%3E%3D22.19-green)](https://nodejs.org)
+[![Electron](https://img.shields.io/badge/electron-37-blueviolet)](https://www.electronjs.org)
 
 将 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）封装为桌面端应用的 **Electron 薄壳**实现。
 
 > 核心原则：**不改动 dsh 的任何前端代码**。桌面端启动官方 `dsh web` 运行时并加载原版 Web UI，所有原始界面与交互（会话、工作区、工具调用、审批、插件管理、模型配置等）100% 原样保留。
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="DSH Desk 运行截图" width="720">
+</p>
+
+## 特性
+
+- **不改动前端**：启动官方 `dsh web` 运行时并加载原版 Web UI，界面与交互 100% 原样保留
+- **原生桌面体验**：独立窗口、原生菜单、错误恢复、单实例锁定
+- **自包含打包**：内置 Node 运行时与 dsh 依赖树，目标机器无需安装 Node 或联网
+- **数据互通**：复用官方 `$DSH_HOME`，与 CLI 数据无缝共享
+- **安全**：`contextIsolation` + `sandbox` + 无 `nodeIntegration`，外链走系统浏览器
 
 ## 方案（第一期：Plan A）
 
@@ -70,7 +86,7 @@ npm run dist              # 当前平台
 ```
 
 打包后的应用完全自包含：内置 Node 运行时与 dsh 依赖树，目标机器无需安装 Node 或联网。
-发布前请在 `electron-builder.yml` 中配置正式 `appId`、开发者证书签名（macOS 公证）与图标。
+发布前请配置开发者证书签名（macOS 公证）；`appId` 已设为 `io.github.volcanicll.dsh-desk`，图标使用仓库根目录 `icon.png`。
 
 ## 验证
 
@@ -102,6 +118,10 @@ npx electron . --self-test
 
 deepseek-harness 官方架构笔记已为 Electron 预留设计：`AbstractApiClient` 只需实现 `doFetch` 即可接入新载体，前端 `file://` 加载 + IPC fetch 桥。二期可去掉本地端口与子进程，将 dsh host 侧直接运行在 Electron 主进程内（见 `packages/host/webserver/src/index.ts` 注释与 `.agents/notes/implemented/architecture/2026-07-19-gui-layering-and-rpc-protocol.zh.md`）。
 
+## 贡献
+
+欢迎提交 [Issue](https://github.com/volcanicll/dsh-desk/issues) 与 PR；本地验证请先通过 `npm run smoke`。
+
 ## 许可
 
-MIT。DeepSeek Harness 本体为 MIT（[LICENSE](https://github.com/deepseek-ai/deepseek-harness/blob/main/LICENSE)）。
+[MIT](LICENSE)。DeepSeek Harness 本体为 MIT（[LICENSE](https://github.com/deepseek-ai/deepseek-harness/blob/main/LICENSE)）。

@@ -5,3 +5,8 @@ resources/node/
 resources/dsh/
 *.log
 .DS_Store
+
+# local env / editor
+.env*
+.idea/
+.vscode/

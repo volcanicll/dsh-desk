@@ -5,7 +5,7 @@
   "description": "Desktop wrapper for DeepSeek Harness (dsh). Preserves the original web UI and interactions while adding native desktop behavior.",
   "type": "module",
   "main": "src/main/index.js",
-  "author": "DSH Desk contributors",
+  "author": "volcanicll <1605090219@qq.com>",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -24,6 +24,26 @@
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
-    "@deepseek-ai/dsh": "latest"
+    "@deepseek-ai/dsh": "0.1.0-rc.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/volcanicll/dsh-desk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/volcanicll/dsh-desk/issues"
+  },
+  "homepage": "https://github.com/volcanicll/dsh-desk",
+  "keywords": [
+    "electron",
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "desktop",
+    "agent",
+    "ai"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
   }
 }
