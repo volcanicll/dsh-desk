@@ -1,11 +1,11 @@
 {
-  "name": "deepseek-desktop",
-  "productName": "DeepSeek Desktop",
+  "name": "dsh-desk",
+  "productName": "DSH Desk",
   "version": "0.1.0",
   "description": "Desktop wrapper for DeepSeek Harness (dsh). Preserves the original web UI and interactions while adding native desktop behavior.",
   "type": "module",
   "main": "src/main/index.js",
-  "author": "DeepSeek Desktop contributors",
+  "author": "DSH Desk contributors",
   "license": "MIT",
   "scripts": {
     "start": "electron .",

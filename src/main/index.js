@@ -1,5 +1,5 @@
 /**
- * DeepSeek Desktop — Electron main process.
+ * DSH Desk — Electron main process.
  *
  * Boots the bundled DeepSeek Harness (dsh) server, waits for its official
  * readiness line (`dsh web: http://127.0.0.1:<port>`), then loads the
@@ -109,7 +109,7 @@ function createMainWindow(url) {
     height: 860,
     minWidth: 900,
     minHeight: 600,
-    title: 'DeepSeek Desktop',
+    title: 'DSH Desk',
     backgroundColor: '#0d1117',
     show: false,
     webPreferences: {
@@ -158,7 +158,7 @@ function createShellWindow() {
   const win = new BrowserWindow({
     width: 760,
     height: 520,
-    title: 'DeepSeek Desktop',
+    title: 'DSH Desk',
     backgroundColor: '#0d1117',
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.js'),

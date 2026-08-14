@@ -1,6 +1,6 @@
-appId: ai.deepseek.desktop
-productName: DeepSeek Desktop
-copyright: Copyright © 2026 DeepSeek Desktop contributors
+appId: io.github.volcanicll.dsh-desk
+productName: DSH Desk
+copyright: Copyright © 2026 DSH Desk contributors
 directories:
   output: release
   buildResources: build

@@ -1,4 +1,4 @@
-# DeepSeek Desktop
+# DSH Desk
 
 将 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）封装为桌面端应用的 **Electron 薄壳**实现。
 
@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TB
-    subgraph "DeepSeek Desktop (Electron)"
+    subgraph "DSH Desk (Electron)"
         Main["Electron 主进程<br/>src/main/index.js<br/>生命周期/菜单/错误恢复"]
         Runtime["dsh 运行时子进程<br/>src/main/dsh-runtime.js"]
         Win["BrowserWindow<br/>加载 http://127.0.0.1:&lt;随机端口&gt;"]
@@ -28,7 +28,7 @@ flowchart TB
 ### 目录结构
 
 ```
-deepseek-desktop/
+dsh-desk/
 ├── src/
 │   ├── main/
 │   │   ├── index.js        # 应用入口：生命周期、窗口、错误恢复、--self-test
@@ -82,7 +82,7 @@ node scripts/smoke.mjs --packaged /path/to/resources-root
 # 3) GUI 自测（开发模式）：启动 → 加载原版 UI → 自动退出
 npx electron . --self-test
 # 4) GUI 自测（打包产物）：
-"./release/mac-arm64/DeepSeek Desktop.app/Contents/MacOS/DeepSeek Desktop" --self-test
+"./release/mac-arm64/DSH Desk.app/Contents/MacOS/DSH Desk" --self-test
 # 5) 附带截图（可选）
 ... --self-test --screenshot /tmp/shot.png
 ```
