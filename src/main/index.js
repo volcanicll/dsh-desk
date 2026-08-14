@@ -58,6 +58,10 @@ async function boot() {
           if (SCREENSHOT_PATH) {
             try {
               await new Promise((r) => setTimeout(r, 5000)) // let the SPA render
+              const domInfo = await mainWindow.webContents.executeJavaScript(
+                `JSON.stringify({ title: document.title, text: document.body?.innerText?.length ?? -1, root: !!document.getElementById('root'), html: document.documentElement.outerHTML.length })`,
+              )
+              console.log(`[self-test] dom: ${domInfo}`)
               const image = await mainWindow.webContents.capturePage()
               const { writeFileSync } = await import('node:fs')
               writeFileSync(SCREENSHOT_PATH, image.toPNG())
