@@ -17,7 +17,7 @@
 | `npmRebuild` | `false` | dsh 依赖树已由 `bundle-dsh.mjs` 就绪 |
 | macOS | `hardenedRuntime` + entitlements（JIT、网络） | 发布需签名与公证 |
 
-> 注意：应用图标由 `icon.png`（项目根）在打包前复制到 `build/icon.png`（`scripts/gen-icon.mjs`），electron-builder 会据此生成各平台 `.icns` / `.ico`。若改了图标记得重新生成。
+> 注意：应用图标源文件为 `assets/icon.png`，由 `scripts/gen-icon.mjs` 在打包前复制到 `build/icon.png`，electron-builder 会据此生成各平台 `.icns` / `.ico`。若改了图标记得重新生成。
 
 ## 2. 构建安装包
 

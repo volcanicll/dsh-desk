@@ -158,7 +158,8 @@ dsh-desk/
 │   ├── check-dsh-update.mjs# 查询 npm latest 并对比/升级 dsh 版本
 │   ├── gen-icon.mjs        # 生成应用图标 build/icon.png
 │   └── smoke.mjs           # 无 GUI 冒烟测试（dev/packaged 两种布局）
-├── build/                  # 图标、entitlements
+├── assets/                 # 源资源（应用图标 icon.png）
+├── build/                  # 构建资源（生成图标、entitlements）
 ├── docs/                   # 项目文档
 ├── .github/workflows/      # CI（smoke）
 ├── electron-builder.yml    # 三平台打包配置

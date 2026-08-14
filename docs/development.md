@@ -41,7 +41,7 @@ npm start    # 启动桌面应用：自动拉起 dsh web --port <空闲端口> �
 | `npm run update:dsh` | `check-dsh-update.mjs --apply` | 有新版时升级 + 重捆绑 + 验证 |
 | `npm run pack` | `prepare:runtime` + `electron-builder --dir` | 产出未打包目录（调试用） |
 | `npm run dist[:mac\|win\|linux]` | `prepare:runtime` + `electron-builder [--mac\|--win\|--linux]` | 产出安装包 |
-| — | `node scripts/gen-icon.mjs` | 复制 `icon.png` → `build/icon.png` |
+| — | `node scripts/gen-icon.mjs` | 复制 `assets/icon.png` → `build/icon.png` |
 | — | `node scripts/fetch-node.mjs --all` | 下载全部平台 Node 运行时 |
 
 ### 直接调用脚本的额外用法
