@@ -9,7 +9,7 @@
  *
  * Usage:
  *   node scripts/fetch-node.mjs            # current platform only
- *   node scripts/fetch-node.mjs --all      # darwin-arm64, darwin-x64, win32-x64, linux-x64, linux-arm64
+ *   node scripts/fetch-node.mjs --all      # darwin-arm64, darwin-x64, win-x64, linux-x64, linux-arm64
  *   node scripts/fetch-node.mjs --platforms darwin-arm64,darwin-x64   # explicit list
  */
 import { createWriteStream, existsSync, mkdirSync, renameSync, rmSync } from 'node:fs'
@@ -18,14 +18,14 @@ import { Readable } from 'node:stream'
 import { join, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 
-const NODE_VERSION = process.env.DSH_NODE_VERSION || 'v22.22.0'
+const NODE_VERSION = process.env.DSH_NODE_VERSION || 'v22.23.2'
 const BASE = `https://nodejs.org/dist/${NODE_VERSION}`
 const ROOT = resolve(import.meta.dirname, '..')
 const OUT = join(ROOT, 'resources', 'node')
 
 const platformsIdx = process.argv.indexOf('--platforms')
 const TARGETS = process.argv.includes('--all')
-  ? ['darwin-arm64', 'darwin-x64', 'win32-x64', 'linux-x64', 'linux-arm64']
+  ? ['darwin-arm64', 'darwin-x64', 'win-x64', 'linux-x64', 'linux-arm64']
   : platformsIdx !== -1
     ? process.argv[platformsIdx + 1].split(',').map((s) => s.trim()).filter(Boolean)
     : [`${process.platform}-${process.arch}`]
@@ -40,8 +40,9 @@ async function main() {
   for (const key of TARGETS) {
     const [platform, arch] = key.split('-')
     const isWin = platform === 'win32'
+    const dlPlatform = isWin ? 'win' : platform
     const ext = isWin ? 'zip' : 'tar.gz'
-    const filename = `node-${NODE_VERSION}-${platform}-${arch}.${ext}`
+    const filename = `node-${NODE_VERSION}-${dlPlatform}-${arch}.${ext}`
     const url = `${BASE}/${filename}`
     const destDir = join(OUT, key)
     const marker = join(destDir, 'bin', isWin ? 'node.exe' : 'node')
