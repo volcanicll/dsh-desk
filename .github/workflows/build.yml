@@ -19,6 +19,8 @@ jobs:
   build-mac:
     name: Build macOS (arm64 + x64 DMG)
     runs-on: macos-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -45,6 +47,8 @@ jobs:
   build-win:
     name: Build Windows (x64 NSIS)
     runs-on: windows-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -71,6 +75,8 @@ jobs:
   build-linux:
     name: Build Linux (x64 + arm64 AppImage)
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
