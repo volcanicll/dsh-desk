@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSH Desk - DeepSeek Harness 桌面客户端</title>
+<meta name="description" content="将 DeepSeek Harness 封装为原生桌面应用。零前端改动，自包含打包，三平台可用。">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060d18;
+  --bg-raised: #0a1424;
+  --bg-card: #0e1a2e;
+  --border: rgba(96, 165, 250, 0.12);
+  --border-strong: rgba(96, 165, 250, 0.25);
+  --text: rgba(240, 244, 250, 0.92);
+  --text-secondary: rgba(160, 174, 192, 0.75);
+  --text-muted: rgba(100, 116, 139, 0.6);
+  --accent: #4d9fff;
+  --accent-dim: rgba(77, 159, 255, 0.15);
+  --accent-glow: rgba(77, 159, 255, 0.08);
+  --wave: #2b6cb0;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --sans: 'Space Grotesk', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: rgba(77,159,255,0.25); color: #fff; }
+
+/* ── Nav ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 64px;
+  background: rgba(6, 13, 24, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.nav-logo img { width: 28px; height: 28px; border-radius: 6px; }
+.nav-logo span { font-weight: 600; font-size: 15px; letter-spacing: -0.02em; }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-links a.nav-cta {
+  color: var(--accent); font-weight: 600;
+  padding: 7px 16px; border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  transition: background 0.2s, border-color 0.2s;
+}
+.nav-links a.nav-cta:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+/* ── Hero ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 120px 40px 80px;
+  position: relative;
+  max-width: 1200px; margin: 0 auto;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-strong);
+  border-radius: 100px;
+  padding: 5px 14px;
+  width: fit-content;
+  margin-bottom: 28px;
+}
+.hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.hero h1 {
+  font-size: clamp(44px, 7vw, 76px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  max-width: 760px;
+  margin-bottom: 20px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+  position: relative;
+}
+.hero h1 em::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 4px; height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-secondary);
+  max-width: 560px;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+.hero-sub strong { color: var(--text); font-weight: 600; }
+.hero-actions { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 56px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--sans); font-weight: 600; font-size: 15px;
+  text-decoration: none; border-radius: 10px;
+  padding: 13px 28px;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 2px 12px rgba(77,159,255,0.25);
+}
+.btn-primary:hover { background: #6bb2ff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(77,159,255,0.35); }
+.btn-ghost {
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+}
+.btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+.hero-meta {
+  font-family: var(--mono); font-size: 12.5px;
+  color: var(--text-muted);
+  display: flex; gap: 24px; flex-wrap: wrap;
+}
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+.hero-meta .tick { color: var(--accent); }
+
+/* Hero visual: screenshot frame */
+.hero-visual {
+  margin-top: 64px;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-raised);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.3),
+    0 8px 40px rgba(0,0,0,0.5),
+    0 0 120px var(--accent-glow);
+}
+.hero-visual .chrome-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: rgba(14, 26, 46, 0.9);
+  border-bottom: 1px solid var(--border);
+}
+.hero-visual .chrome-bar .traffic { display: flex; gap: 6px; }
+.hero-visual .chrome-bar .traffic i {
+  width: 11px; height: 11px; border-radius: 50%; display: block;
+}
+.hero-visual .chrome-bar .traffic i:nth-child(1) { background: #ff5f57; }
+.hero-visual .chrome-bar .traffic i:nth-child(2) { background: #febc2e; }
+.hero-visual .chrome-bar .traffic i:nth-child(3) { background: #28c840; }
+.hero-visual .chrome-bar .title {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--text-muted); margin-left: 8px;
+}
+.hero-visual img { width: 100%; display: block; }
+
+/* ── Sections ── */
+.section {
+  max-width: 1200px; margin: 0 auto;
+  padding: 100px 40px;
+}
+.section-label {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 14px;
+}
+.section h2 {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  max-width: 640px;
+}
+.section-sub {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 520px;
+  line-height: 1.8;
+  margin-bottom: 56px;
+}
+
+/* ── Features: asymmetric grid ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.feature-cell {
+  background: var(--bg-card);
+  padding: 36px 32px;
+  transition: background 0.25s;
+}
+.feature-cell:hover { background: #122240; }
+.feature-cell.wide { grid-column: 1 / -1; }
+.feature-cell .icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--accent-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 18px;
+  border: 1px solid var(--border-strong);
+}
+.feature-cell h3 {
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.feature-cell p {
+  font-size: 14.5px; color: var(--text-secondary); line-height: 1.7;
+}
+.feature-cell code {
+  font-family: var(--mono); font-size: 12.5px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 2px 7px; border-radius: 5px;
+}
+
+/* ── Architecture ── */
+.arch-flow {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  gap: 0; align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.arch-node {
+  padding: 28px 24px;
+  background: var(--bg-card);
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 140px;
+}
+.arch-node .label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.arch-node .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.arch-node .desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.arch-arrow {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-raised);
+  color: var(--accent);
+  font-size: 20px; padding: 0 16px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+/* ── Platforms ── */
+.platforms-row {
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+.platform-card {
+  flex: 1; min-width: 240px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  transition: border-color 0.2s;
+}
+.platform-card:hover { border-color: var(--border-strong); }
+.platform-card .os { font-size: 26px; margin-bottom: 12px; }
+.platform-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.platform-card p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+.platform-card .fmt {
+  display: inline-block; margin-top: 14px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--accent); background: var(--accent-dim);
+  padding: 4px 10px; border-radius: 6px;
+}
+
+/* ── Quick start ── */
+.terminal {
+  background: #0a0e18;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.terminal .term-bar {
+  display: flex; align-items: center; padding: 10px 16px;
+  background: rgba(20, 28, 44, 0.8);
+  border-bottom: 1px solid var(--border);
+}
+.terminal .term-bar .traffic { display: flex; gap: 6px; }
+.terminal .term-bar .traffic i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.terminal .term-bar .traffic i:nth-child(1) { background: #ff5f57; }
+.terminal .term-bar .traffic i:nth-child(2) { background: #febc2e; }
+.terminal .term-bar .traffic i:nth-child(3) { background: #28c840; }
+.terminal .term-body {
+  padding: 20px 24px;
+  font-family: var(--mono); font-size: 13.5px;
+  line-height: 2.0;
+  color: var(--text-secondary);
+}
+.terminal .term-body .prompt { color: var(--accent); user-select: none; }
+.terminal .term-body .cmd { color: var(--text); }
+.terminal .term-body .comment { color: var(--text-muted); }
+.terminal .term-body .output { color: #7ee787; }
+
+/* ── Footer ── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 40px;
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 32px;
+}
+.footer-left { display: flex; flex-direction: column; gap: 8px; }
+.footer-left .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+.footer-left .brand img { width: 24px; height: 24px; border-radius: 5px; }
+.footer-left .license { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+.footer-links { display: flex; gap: 32px; flex-wrap: wrap; }
+.footer-col h4 {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+.footer-col a {
+  display: block; font-size: 14px;
+  color: var(--text-secondary); text-decoration: none;
+  margin-bottom: 8px; transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--text); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 20px 60px; }
+  .section { padding: 64px 20px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .arch-flow { grid-template-columns: 1fr; }
+  .arch-arrow { transform: rotate(90deg); padding: 8px; }
+  .footer { flex-direction: column; padding: 40px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <img src="icon.png" alt="DSH Desk">
+    <span>DSH Desk</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">功能</a>
+    <a href="#architecture">架构</a>
+    <a href="#platforms">平台</a>
+    <a href="#quickstart">快速开始</a>
+    <a class="nav-cta" href="https://github.com/volcanicll/dsh-desk">GitHub →</a>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    v0.1.0 · MIT License
+  </div>
+  <h1>DeepSeek Harness，<br>现在是<em>桌面应用</em>。</h1>
+  <p class="hero-sub">
+    DSH Desk 用 Electron 薄壳启动官方 <code>dsh web</code> 运行时。<strong>零前端改动</strong>，所有会话、工作区、工具调用与审批交互 100% 原样保留。
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="https://github.com/volcanicll/dsh-desk/releases">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M4 6.5L8 10.5l4-4M2 13.5h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      下载最新版
+    </a>
+    <a class="btn btn-ghost" href="https://github.com/volcanicll/dsh-desk">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      查看源码
+    </a>
+  </div>
+  <div class="hero-meta">
+    <span><span class="tick">✓</span> macOS · Windows · Linux</span>
+    <span><span class="tick">✓</span> 无需安装 Node</span>
+    <span><span class="tick">✓</span> 与 CLI 数据互通</span>
+  </div>
+
+  <div class="hero-visual">
+    <div class="chrome-bar">
+      <div class="traffic"><i></i><i></i><i></i></div>
+      <span class="title">DSH Desk — DeepSeek Harness</span>
+    </div>
+    <img src="screenshot.png" alt="DSH Desk 运行截图：原版 DeepSeek Harness Web UI" loading="lazy">
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="section" id="features">
+  <div class="section-label">功能特性</div>
+  <h2>薄壳设计，完整体验。</h2>
+  <p class="section-sub">不做任何前端改动。壳只负责拉起官方运行时和提供原生桌面外壳，其余交给 dsh。</p>
+  <div class="features-grid">
+    <div class="feature-cell wide">
+      <div class="icon">🐋</div>
+      <h3>原版 UI 100% 保留</h3>
+      <p>启动官方 <code>dsh web</code> 运行时并加载原版 Web UI。会话、工作区、工具调用、审批、插件管理、模型配置，与浏览器版完全一致。</p>
+    </div>
+    <div class="feature-cell">
+      <div class="icon">📦</div>
+      <h3>自包含打包</h3>
+      <p>内置 Node 运行时与 dsh 完整依赖树。目标机器无需安装 Node，无需联网。</p>
+    </div>
+    <div class="feature-cell">
+      <div class="icon">🔄</div>
+      <h3>数据互通</h3>
+      <p>复用官方 <code>$DSH_HOME</code>（默认 <code>~/.dsh</code>），与 CLI 无缝共享工作区、配置与会话。</p>
+    </div>
+    <div class="feature-cell">
+      <div class="icon">🖥</div>
+      <h3>原生桌面体验</h3>
+      <p>独立窗口、原生菜单、单实例锁定、<code>⌘⇧R</code> 一键重启后端。异常退出时显示友好错误页。</p>
+    </div>
+    <div class="feature-cell">
+      <div class="icon">🛡</div>
+      <h3>安全边界</h3>
+      <p><code>contextIsolation</code> + <code>sandbox</code>，无 <code>nodeIntegration</code>。外链走系统浏览器，仅回环地址监听，子进程禁用遥测。</p>
+    </div>
+    <div class="feature-cell wide">
+      <div class="icon">⚡</div>
+      <h3>三层就绪检测 + 一键同步</h3>
+      <p>官方就绪行 → stdout 兜底 → HTTP 轮询，对上游输出变化抗脆。<code>npm run check:update</code> 一键检测并升级到最新 npm 发布版。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ARCHITECTURE ═══ -->
+<section class="section" id="architecture">
+  <div class="section-label">架构</div>
+  <h2>双进程，零侵入。</h2>
+  <p class="section-sub">Electron 主进程管理生命周期，dsh 运行时作为独立子进程提供完整后端能力。通信走官方 HTTP + WebSocket RPC 协议。</p>
+  <div class="arch-flow">
+    <div class="arch-node">
+      <div class="label">Electron Main</div>
+      <div class="name">主进程</div>
+      <div class="desc">生命周期 / 菜单 / 就绪检测 / 错误恢复</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="label">dsh Runtime</div>
+      <div class="name">运行时子进程</div>
+      <div class="desc">node lib/bin.js web --port &lt;空闲端口&gt;</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-node">
+      <div class="label">BrowserWindow</div>
+      <div class="name">桌面窗口</div>
+      <div class="desc">加载 http://127.0.0.1:&lt;port&gt;，原版 UI 100% 保留</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATFORMS ═══ -->
+<section class="section" id="platforms">
+  <div class="section-label">平台</div>
+  <h2>三平台，一个产物逻辑。</h2>
+  <p class="section-sub">每个平台都是完全自包含的安装包，不依赖系统 Node 环境。</p>
+  <div class="platforms-row">
+    <div class="platform-card">
+      <div class="os">🍎</div>
+      <h3>macOS</h3>
+      <p>Universal（arm64 + x64），支持签名与公证。</p>
+      <span class="fmt">.dmg</span>
+    </div>
+    <div class="platform-card">
+      <div class="os">🪟</div>
+      <h3>Windows</h3>
+      <p>NSIS 安装向导，可自选安装目录。</p>
+      <span class="fmt">.exe</span>
+    </div>
+    <div class="platform-card">
+      <div class="os">🐧</div>
+      <h3>Linux</h3>
+      <p>AppImage，免安装，直接运行。</p>
+      <span class="fmt">.AppImage</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ QUICK START ═══ -->
+<section class="section" id="quickstart">
+  <div class="section-label">快速开始</div>
+  <h2>三行命令，跑起来。</h2>
+  <p class="section-sub">开发模式需要系统 Node ≥ 22.19。打包模式完全自包含。</p>
+  <div class="terminal">
+    <div class="term-bar">
+      <div class="traffic"><i></i><i></i><i></i></div>
+    </div>
+    <div class="term-body">
+      <div><span class="comment"># 克隆并安装</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">git clone https://github.com/volcanicll/dsh-desk.git && cd dsh-desk && npm install</span></div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 启动开发模式</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">npm start</span></div>
+      <div>&nbsp;</div>
+      <div><span class="comment"># 构建安装包（macOS 为例）</span></div>
+      <div><span class="prompt">$</span> <span class="cmd">npm run dist:mac</span></div>
+      <div>&nbsp;</div>
+      <div><span class="output">✓ dsh web ready at http://127.0.0.1:54321</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="footer-left">
+    <div class="brand">
+      <img src="icon.png" alt="DSH Desk">
+      DSH Desk
+    </div>
+    <span class="license">MIT License · © 2026 volcanicll</span>
+  </div>
+  <div class="footer-links">
+    <div class="footer-col">
+      <h4>项目</h4>
+      <a href="https://github.com/volcanicll/dsh-desk">GitHub</a>
+      <a href="https://github.com/volcanicll/dsh-desk/releases">Releases</a>
+      <a href="https://github.com/volcanicll/dsh-desk/issues">Issues</a>
+    </div>
+    <div class="footer-col">
+      <h4>文档</h4>
+      <a href="https://github.com/volcanicll/dsh-desk/blob/main/docs/architecture.md">架构设计</a>
+      <a href="https://github.com/volcanicll/dsh-desk/blob/main/docs/development.md">开发指南</a>
+      <a href="https://github.com/volcanicll/dsh-desk/blob/main/docs/release.md">发布指南</a>
+    </div>
+    <div class="footer-col">
+      <h4>社区</h4>
+      <a href="https://github.com/volcanicll/dsh-desk/blob/main/CONTRIBUTING.md">贡献指南</a>
+      <a href="https://github.com/volcanicll/dsh-desk/blob/main/CHANGELOG.md">变更日志</a>
+      <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

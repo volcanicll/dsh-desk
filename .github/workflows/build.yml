@@ -1,0 +1,94 @@
+name: Build Desktop
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'electron-builder.yml'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mac:
+    name: Build macOS (arm64 + x64 DMG)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Node runtimes (darwin)
+        run: node scripts/fetch-node.mjs --platforms darwin-arm64,darwin-x64
+      - name: Bundle dsh
+        run: node scripts/bundle-dsh.mjs
+      - name: Build DMGs
+        run: npx electron-builder --mac --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-mac-${{ github.sha }}
+          path: |
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/latest-mac.yml
+          if-no-files-found: error
+
+  build-win:
+    name: Build Windows (x64 NSIS)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Node runtime (win32-x64)
+        run: node scripts/fetch-node.mjs --platforms win32-x64
+      - name: Bundle dsh
+        run: node scripts/bundle-dsh.mjs
+      - name: Build NSIS installer
+        run: npx electron-builder --win --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-win-${{ github.sha }}
+          path: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux (x64 + arm64 AppImage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Node runtimes (linux)
+        run: node scripts/fetch-node.mjs --platforms linux-x64,linux-arm64
+      - name: Bundle dsh
+        run: node scripts/bundle-dsh.mjs
+      - name: Build AppImages
+        run: npx electron-builder --linux --publish never
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desk-linux-${{ github.sha }}
+          path: |
+            release/*.AppImage
+            release/latest-linux.yml
+          if-no-files-found: error
