@@ -35,7 +35,7 @@ if (requested === 'latest') {
 
 mkdirSync(DEST, { recursive: true })
 console.log(`[bundle-dsh] installing @deepseek-ai/dsh@${requested} into ${DEST}`)
-execFileSync('npm', [
+execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', [
   'install', '--prefix', DEST,
   '--omit=dev', '--no-audit', '--no-fund', '--loglevel=error',
   `@deepseek-ai/dsh@${requested}`,
