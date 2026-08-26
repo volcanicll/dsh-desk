@@ -73,10 +73,12 @@ async function main() {
       throw new Error('response does not look like the dsh web UI')
     }
 
-    // Probe a second page (SPA route) to confirm the static fallback works.
-    const spa = await fetch(`${url}/settings`)
-    console.log(`[smoke] GET ${url}/settings → ${spa.status}`)
-    if (spa.status !== 200) throw new Error(`SPA fallback expected 200, got ${spa.status}`)
+    // dsh >= 0.1.1-rc.x serves the SPA from the dist root (hash routing) and
+    // returns 404 for unknown paths instead of an index rewrite. Probe a real
+    // static asset to confirm the dist pipeline still resolves.
+    const asset = await fetch(`${url}/favicon.svg`)
+    console.log(`[smoke] GET ${url}/favicon.svg → ${asset.status}`)
+    if (asset.status !== 200) throw new Error(`static asset expected 200, got ${asset.status}`)
 
     console.log('[smoke] OK — dsh runtime pipeline verified')
   } finally {
